@@ -39,7 +39,9 @@ int main() {
     bool paused = false;
     bool inMenu = true;
     
-    Texture2D texture = LoadTexture("exp32.png");
+    Texture2D texture = LoadTexture("aaaaaaa.png");
+    
+    Sound rumble = LoadSound("morreu.mp3");
     
     // Menu inicial
     while (inMenu) {
@@ -89,6 +91,7 @@ int main() {
                 DrawText("Você ganhou!", 10, 10, 20, GREEN);
             } else {
                 DrawText("Você perdeu!", 10, 10, 20, RED);
+                PlaySound(rumble);
             }
             DrawText("Pressione ESC para sair", 10, 40, 20, DARKGRAY);
             EndDrawing();
@@ -141,7 +144,8 @@ int main() {
         DrawText(TextFormat("Vidas: %d", game.lives), 10, BOARD_SIZE * TILE_SIZE + 30, 20, BLACK);
         EndDrawing();
     }
-
+    
+    UnloadSound(rumble);
     CloseWindow();
     return 0;
 }
