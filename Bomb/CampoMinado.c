@@ -5,9 +5,7 @@
 
 #define BOARD_SIZE 20
 #define TILE_SIZE 32
-#define NUM_BOMBS 200
-#define MAX_LIVES 3
-
+#define NUM_BOMBS 10
 typedef struct {
     bool hasBomb;
     bool revealed;
@@ -23,17 +21,17 @@ typedef struct {
 } GameState;
 
 // Prototipos das funções auxiliares
-void InitializeBoard(GameState *game);
-void PlaceBombs(GameState *game);
+void InitializeBoard(GameState *game, int numBombas);
+void PlaceBombs(GameState *game, int numBombas);
 int CalculateBombsAround(GameState *game, int x, int y);
-void RevealTile(GameState *game, int x, int y);
+void RevealTile(GameState *game, int x, int y, int numBombas);
 void SaveGame(GameState *game);
 bool LoadGame(GameState *game);
 
 // Funções auxiliares
-void InitializeBoard(GameState *game) {
+void InitializeBoard(GameState *game, int numBombas) {
     srand(time(NULL));
-    game->lives = MAX_LIVES;
+    game->lives = 3;
     game->revealedTiles = 0;
     game->gameOver = false;
     game->gameWon = false;
@@ -43,11 +41,11 @@ void InitializeBoard(GameState *game) {
             game->board[y][x] = (Tile){false, false, false};
         }
     }
-    PlaceBombs(game);
+    PlaceBombs(game, numBombas);
 }
 
-void PlaceBombs(GameState *game) {
-    for (int i = 0; i < NUM_BOMBS; i++) {
+void PlaceBombs(GameState *game, int numBombas) {
+    for (int i = 0; i < numBombas; i++) {
         int x, y;
         do {
             x = rand() % BOARD_SIZE;
@@ -71,7 +69,7 @@ int CalculateBombsAround(GameState *game, int x, int y) {
     return count;
 }
 
-void RevealTile(GameState *game, int x, int y) {
+void RevealTile(GameState *game, int x, int y, int numBombas) {
     if (!game->board[y][x].revealed) {
         game->board[y][x].revealed = true;
         if (game->board[y][x].hasBomb) {
@@ -81,7 +79,7 @@ void RevealTile(GameState *game, int x, int y) {
             }
         } else {
             game->revealedTiles++;
-            if (game->revealedTiles == (BOARD_SIZE * BOARD_SIZE) - NUM_BOMBS) {
+            if (game->revealedTiles == (BOARD_SIZE * BOARD_SIZE) - numBombas) {
                 game->gameWon = true;
             }
         }
@@ -95,27 +93,69 @@ void SaveGame(GameState *game) {
         for (int y = 0; y < BOARD_SIZE; y++) {
             for (int x = 0; x < BOARD_SIZE; x++) {
                 Tile *t = &game->board[y][x];
-                fprintf(file, "%d,%d,%d,", t->hasBomb, t->revealed, t->flagged);
+                fprintf(file, "%d,%d,%d\n", t->hasBomb, t->revealed, t->flagged);
             }
-            fprintf(file, "\n");
         }
         fclose(file);
+        printf("Game saved successfully!\n");
+    } else {
+        printf("Error saving game: Could not open file.\n");
     }
 }
 
 bool LoadGame(GameState *game) {
     FILE *file = fopen("savegame.csv", "r");
-    if (!file) return false;
+    if (!file) {
+        printf("Error loading game: Could not open file.\n");
+        return false;
+    }
 
-    fscanf(file, "%d,%d,%d\n", &game->lives, &game->revealedTiles, &game->gameOver);
+    if (fscanf(file, "%d,%d,%d\n", &game->lives, &game->revealedTiles, &game->gameOver) != 3) {
+        printf("Error loading game: Invalid header format.\n");
+        fclose(file);
+        return false;
+    }
+
     for (int y = 0; y < BOARD_SIZE; y++) {
         for (int x = 0; x < BOARD_SIZE; x++) {
-            Tile *t = &game->board[y][x];
-            fscanf(file, "%d,%d,%d,", &t->hasBomb, &t->revealed, &t->flagged);
+            if (fscanf(file, "%d,%d,%d\n", &game->board[y][x].hasBomb, &game->board[y][x].revealed, &game->board[y][x].flagged) != 3) {
+                printf("Error loading game: Invalid tile data at (%d, %d).\n", x, y);
+                fclose(file);
+                return false;
+            }
         }
     }
+
     fclose(file);
+    printf("Game loaded successfully!\n");
     return true;
+}
+
+
+
+int ShowDifficultyMenu() {
+    int selection = 0;
+    while (selection == 0) {
+        BeginDrawing();
+        ClearBackground(RAYWHITE);
+        DrawText("Escolha a dificuldade:", 10, 10, 20, DARKGRAY);
+        DrawText("1: Fácil (50 Bombas)", 10, 40, 20, DARKGRAY);
+        DrawText("2: Médio (100 Bombas)", 10, 70, 20, DARKGRAY);
+        DrawText("3: Difícil (150 Bombas)", 10, 100, 20, DARKGRAY);
+        DrawText("4: Extremo (200 Bombas)", 10, 130, 20, DARKGRAY);
+        EndDrawing();
+
+        if (IsKeyPressed(KEY_ONE)) {
+            selection = 50;
+        } else if (IsKeyPressed(KEY_TWO)) {
+            selection = 100;
+        } else if (IsKeyPressed(KEY_THREE)) {
+            selection = 150;
+        } else if (IsKeyPressed(KEY_FOUR)) {
+            selection = 200;
+        }
+    }
+    return selection;
 }
 
 // Função principal
@@ -124,29 +164,38 @@ int main() {
     SetTargetFPS(60);
     InitAudioDevice();
 
-    Sound rumble = LoadSound("teste.wav");
+    Sound ganhou = LoadSound("ganhou.wav");
+    Sound perdeu = LoadSound("perdeu.wav");
     Texture2D texture = LoadTexture("bomba.png");
 
     GameState game = {0};
     bool paused = false;
     bool inMenu = true;
-
+    
+    int perdas = 0;
+    int numBombas = 0;
+    
     // Menu inicial
     while (inMenu) {
         BeginDrawing();
         ClearBackground(RAYWHITE);
+        
         DrawText("1: Novo Jogo", 10, 10, 20, DARKGRAY);
         DrawText("2: Carregar Jogo", 10, 40, 20, DARKGRAY);
         EndDrawing();
 
         if (IsKeyPressed(KEY_ONE)) {
-            InitializeBoard(&game);
+            
+            numBombas = ShowDifficultyMenu();
+            
+            InitializeBoard(&game, numBombas);
             inMenu = false;
         } else if (IsKeyPressed(KEY_TWO)) {
             if (!LoadGame(&game)) {
                 DrawText("Falha ao carregar jogo!", 10, 70, 20, RED);
             } else {
                 inMenu = false;
+                LoadGame(&game);
             }
         }
     }
@@ -171,14 +220,15 @@ int main() {
         }
 
         if (game.gameOver || game.gameWon) {
-            if (game.gameOver && !IsSoundPlaying(rumble)) {
-                PlaySound(rumble);
+            if (game.gameOver && !IsSoundPlaying(perdeu)) {
+                PlaySound(perdeu);
             }
 
             BeginDrawing();
             ClearBackground(RAYWHITE);
             if (game.gameWon) {
                 DrawText("Você ganhou!", 10, 10, 20, GREEN);
+                PlaySound(ganhou);
             } else {
                 DrawText("Você perdeu!", 10, 10, 20, RED);
             }
@@ -196,7 +246,7 @@ int main() {
         bool mouseOverBoard = mouseX >= 0 && mouseX < BOARD_SIZE && mouseY >= 0 && mouseY < BOARD_SIZE;
 
         if (mouseOverBoard && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-            RevealTile(&game, mouseX, mouseY);
+            RevealTile(&game, mouseX, mouseY, numBombas);
         }
 
         BeginDrawing();
@@ -210,6 +260,7 @@ int main() {
                 if (game.board[y][x].revealed) {
                     if (game.board[y][x].hasBomb) {
                         DrawTexture(texture, x * TILE_SIZE, y * TILE_SIZE, WHITE);
+                        perdas ++;
                     } else {
                         tileColor = GREEN;
                         DrawRectangleRec(tileRect, tileColor);
@@ -232,7 +283,8 @@ int main() {
         EndDrawing();
     }
 
-    UnloadSound(rumble);
+    UnloadSound(perdeu);
+    UnloadSound(ganhou);
     UnloadTexture(texture);
     CloseAudioDevice();
     CloseWindow();
