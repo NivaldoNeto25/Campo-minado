@@ -3,165 +3,150 @@
 #include <stdlib.h>
 #include <time.h>
 
-#define BOARD_SIZE 20
-#define TILE_SIZE 32
-#define NUM_BOMBS 10
-#define SAVE_FILE "savegame.csv"
+#define TAMANHO_TABULEIRO 20
+#define TAMANHO_CELULA 32
+#define NUMERO_BOMBAS 10
+#define ARQUIVO_SALVAMENTO "salvajogo.csv"
 
 typedef struct {
-    bool hasBomb;
-    bool revealed;
-    bool flagged;
-} Tile;
+    bool temBomba;
+    bool revelado;
+    bool marcado;
+} Celula;
 
 typedef struct {
-    Tile board[BOARD_SIZE][BOARD_SIZE];
-    int lives;
-    int revealedTiles;
-    bool gameOver;
-    bool gameWon;
-} GameState;
+    Celula tabuleiro[TAMANHO_TABULEIRO][TAMANHO_TABULEIRO];
+    int vidas;
+    int celulasReveladas;
+    bool jogoEncerrado;
+    bool jogoVencido;
+} EstadoJogo;
 
 // Funções auxiliares
-void InitializeBoard(GameState *game, int numBombas);
-void PlaceBombs(GameState *game, int numBombas);
-int CalculateBombsAround(GameState *game, int x, int y);
-void RevealTile(GameState *game, int x, int y, int numBombas);
-void SaveGame(GameState *game);
-bool LoadGame(GameState *game);
+void InicializarTabuleiro(EstadoJogo *jogo, int numeroBombas);
+void ColocarBombas(EstadoJogo *jogo, int numeroBombas);
+int ContarBombasAoRedor(EstadoJogo *jogo, int x, int y);
+void RevelarCelula(EstadoJogo *jogo, int x, int y, int numeroBombas, Sound explosao);
+void SalvarJogo(EstadoJogo *jogo);
+bool CarregarJogo(EstadoJogo *jogo);
 
 // Inicialização do jogo
-void InitializeBoard(GameState *game, int numBombas) {
+void InicializarTabuleiro(EstadoJogo *jogo, int numeroBombas) {
     srand(time(NULL));
-    game->lives = 3;
-    game->revealedTiles = 0;
-    game->gameOver = false;
-    game->gameWon = false;
+    jogo->vidas = 3;
+    jogo->celulasReveladas = 0;
+    jogo->jogoEncerrado = false;
+    jogo->jogoVencido = false;
 
-    for (int y = 0; y < BOARD_SIZE; y++) {
-        for (int x = 0; x < BOARD_SIZE; x++) {
-            game->board[y][x] = (Tile){false, false, false};
+    for (int y = 0; y < TAMANHO_TABULEIRO; y++) {
+        for (int x = 0; x < TAMANHO_TABULEIRO; x++) {
+            jogo->tabuleiro[y][x] = (Celula){false, false, false};
         }
     }
-    PlaceBombs(game, numBombas);
+    ColocarBombas(jogo, numeroBombas);
 }
 
-void PlaceBombs(GameState *game, int numBombas) {
-    for (int i = 0; i < numBombas; i++) {
+void ColocarBombas(EstadoJogo *jogo, int numeroBombas) {
+    for (int i = 0; i < numeroBombas; i++) {
         int x, y;
         do {
-            x = rand() % BOARD_SIZE;
-            y = rand() % BOARD_SIZE;
-        } while (game->board[y][x].hasBomb);
-        game->board[y][x].hasBomb = true;
-}
+            x = rand() % TAMANHO_TABULEIRO;
+            y = rand() % TAMANHO_TABULEIRO;
+        } while (jogo->tabuleiro[y][x].temBomba);
+        jogo->tabuleiro[y][x].temBomba = true;
+    }
 }
 
-int CalculateBombsAround(GameState *game, int x, int y) {
-    int count = 0;
+int ContarBombasAoRedor(EstadoJogo *jogo, int x, int y) {
+    int contador = 0;
     for (int dy = -1; dy <= 1; dy++) {
         for (int dx = -1; dx <= 1; dx++) {
             int nx = x + dx;
             int ny = y + dy;
-            if (nx >= 0 && nx < BOARD_SIZE && ny >= 0 && ny < BOARD_SIZE && game->board[ny][nx].hasBomb) {
-                count++;
+            if (nx >= 0 && nx < TAMANHO_TABULEIRO && ny >= 0 && ny < TAMANHO_TABULEIRO && jogo->tabuleiro[ny][nx].temBomba) {
+                contador++;
             }
         }
     }
-    return count;
+    return contador;
 }
 
-void RevealTile(GameState *game, int x, int y, int numBombas) {
-    if (!game->board[y][x].revealed) {
-        game->board[y][x].revealed = true;
-        if (game->board[y][x].hasBomb) {
-            game->lives--;
-            if (game->lives <= 0) {
-                game->gameOver = true;
+void RevelarCelula(EstadoJogo *jogo, int x, int y, int numeroBombas, Sound explosao) {
+
+    if (!jogo->tabuleiro[y][x].revelado) {
+        jogo->tabuleiro[y][x].revelado = true;
+        if (jogo->tabuleiro[y][x].temBomba) {
+            PlaySound(explosao);
+            jogo->vidas--;
+            if (jogo->vidas <= 0) {
+                jogo->jogoEncerrado = true;
             }
         } else {
-            game->revealedTiles++;
-            if (game->revealedTiles == (BOARD_SIZE * BOARD_SIZE) - numBombas) {
-                game->gameWon = true;
+            jogo->celulasReveladas++;
+            if (jogo->celulasReveladas == (TAMANHO_TABULEIRO * TAMANHO_TABULEIRO) - numeroBombas) {
+                jogo->jogoVencido = true;
             }
         }
     }
 }
 
-void SaveGame(GameState *game) {
-    FILE *file = fopen(SAVE_FILE, "w");
-    if (file) {
-        // Salva as variáveis principais: vidas, células reveladas, status do jogo
-        fprintf(file, "%d,%d,%d\n", game->lives, game->revealedTiles, game->gameOver);
+void SalvarJogo(EstadoJogo *jogo) {
+    FILE *arquivo = fopen(ARQUIVO_SALVAMENTO, "w");
+    if (arquivo) {
+        fprintf(arquivo, "%d,%d,%d\n", jogo->vidas, jogo->celulasReveladas, jogo->jogoEncerrado);
 
-        // Salva o estado das células
-        for (int y = 0; y < BOARD_SIZE; y++) {
-            for (int x = 0; x < BOARD_SIZE; x++) {
-                Tile *t = &game->board[y][x];
-                fprintf(file, "%d,%d,%d\n", t->hasBomb, t->revealed, t->flagged);
+        for (int y = 0; y < TAMANHO_TABULEIRO; y++) {
+            for (int x = 0; x < TAMANHO_TABULEIRO; x++) {
+                Celula *c = &jogo->tabuleiro[y][x];
+                fprintf(arquivo, "%d,%d,%d\n", c->temBomba, c->revelado, c->marcado);
             }
         }
-        fclose(file);
+        fclose(arquivo);
         printf("Jogo salvo com sucesso!\n");
     } else {
         printf("Erro ao salvar o jogo: não foi possível abrir o arquivo.\n");
     }
 }
 
-
-
-bool LoadGame(GameState *game) {
-    FILE *file = fopen(SAVE_FILE, "r");
-    if (!file) {
+bool CarregarJogo(EstadoJogo *jogo) {
+    FILE *arquivo = fopen(ARQUIVO_SALVAMENTO, "r");
+    if (!arquivo) {
         printf("Arquivo de salvamento não encontrado. Iniciando novo jogo...\n");
         return false;
     }
 
-    // Leitura das variáveis principais (lives, revealedTiles, gameOver)
-    int lives, revealedTiles, gameOver;
-    if (fscanf(file, "%d,%d,%d\n", &lives, &revealedTiles, &gameOver) != 3) {
+    int vidas, celulasReveladas, jogoEncerrado;
+    if (fscanf(arquivo, "%d,%d,%d\n", &vidas, &celulasReveladas, &jogoEncerrado) != 3) {
         printf("Erro ao carregar o jogo: formato inválido do cabeçalho.\n");
-        fclose(file);
+        fclose(arquivo);
         return false;
     }
 
-    // Exibindo dados lidos
-    printf("Lidas as seguintes variáveis principais:\n");
-    printf("Vidas: %d\n", lives);
-    printf("Células reveladas: %d\n", revealedTiles);
-    printf("Status do jogo (gameOver): %d\n", gameOver);
+    jogo->vidas = vidas;
+    jogo->celulasReveladas = celulasReveladas;
+    jogo->jogoEncerrado = (jogoEncerrado != 0);
 
-    // Atribuindo valores lidos ao estado do jogo
-    game->lives = lives;
-    game->revealedTiles = revealedTiles;
-    game->gameOver = (gameOver != 0); // 0 significa que o jogo não acabou, 1 significa que o jogo acabou
-
-    // Leitura do estado das células
-    for (int y = 0; y < BOARD_SIZE; y++) {
-        for (int x = 0; x < BOARD_SIZE; x++) {
-            int hasBomb, revealed, flagged;
-            if (fscanf(file, "%d,%d,%d\n", &hasBomb, &revealed, &flagged) != 3) {
+    for (int y = 0; y < TAMANHO_TABULEIRO; y++) {
+        for (int x = 0; x < TAMANHO_TABULEIRO; x++) {
+            int temBomba, revelado, marcado;
+            if (fscanf(arquivo, "%d,%d,%d\n", &temBomba, &revelado, &marcado) != 3) {
                 printf("Erro ao carregar o jogo: dados inválidos da célula (%d, %d).\n", x, y);
-                fclose(file);
+                fclose(arquivo);
                 return false;
             }
-            game->board[y][x].hasBomb = hasBomb;
-            game->board[y][x].revealed = revealed;
-            game->board[y][x].flagged = flagged;
+            jogo->tabuleiro[y][x].temBomba = temBomba;
+            jogo->tabuleiro[y][x].revelado = revelado;
+            jogo->tabuleiro[y][x].marcado = marcado;
         }
     }
 
-    fclose(file);
+    fclose(arquivo);
     printf("Jogo carregado com sucesso!\n");
     return true;
 }
-
-
-
-
-int ShowDifficultyMenu() {
-    int selection = 0;
-    while (selection == 0) {
+int ExibirMenuDificuldade() {
+    int selecao = 0;
+    while (selecao == 0) {
         BeginDrawing();
         ClearBackground(RAYWHITE);
         DrawText("Escolha a dificuldade:", 10, 10, 20, DARKGRAY);
@@ -172,35 +157,37 @@ int ShowDifficultyMenu() {
         EndDrawing();
 
         if (IsKeyPressed(KEY_ONE)) {
-            selection = 50;
+            selecao = 50;
         } else if (IsKeyPressed(KEY_TWO)) {
-            selection = 100;
+            selecao = 100;
         } else if (IsKeyPressed(KEY_THREE)) {
-            selection = 150;
+            selecao = 150;
         } else if (IsKeyPressed(KEY_FOUR)) {
-            selection = 200;
+            selecao = 200;
         }
     }
-    return selection;
+    return selecao;
 }
 
 int main() {
-    InitWindow(BOARD_SIZE * TILE_SIZE, BOARD_SIZE * TILE_SIZE + 50, "Campo Minado");
+    InitWindow(TAMANHO_TABULEIRO * TAMANHO_CELULA, TAMANHO_TABULEIRO * TAMANHO_CELULA + 50, "Campo Minado");
     SetTargetFPS(60);
     InitAudioDevice();
 
     Sound ganhou = LoadSound("ganhou.wav");
     Sound perdeu = LoadSound("perdeu.wav");
-    Texture2D texture = LoadTexture("bomba.png");
+    Sound explosao = LoadSound("explosao.wav");
+    
+    Texture2D texturaBomba = LoadTexture("bomba.png");
 
-    GameState game = {0};
-    bool paused = false;
-    bool inMenu = true;
+    EstadoJogo jogo = {0};
+    bool pausado = false;
+    bool noMenu = true;
    
-    int numBombas = 0;
+    int numeroBombas = 0;
    
     // Menu inicial
-    while (inMenu) {
+    while (noMenu) {
         BeginDrawing();
         ClearBackground(RAYWHITE);
        
@@ -209,21 +196,21 @@ int main() {
         EndDrawing();
 
         if (IsKeyPressed(KEY_ONE)) {
-            numBombas = ShowDifficultyMenu();
-            InitializeBoard(&game, numBombas);
-            inMenu = false;
+            numeroBombas = ExibirMenuDificuldade();
+            InicializarTabuleiro(&jogo, numeroBombas);
+            noMenu = false;
         } else if (IsKeyPressed(KEY_TWO)) {
-            if (!LoadGame(&game)) {
+            if (!CarregarJogo(&jogo)) {
                 DrawText("Falha ao carregar jogo!", 10, 70, 20, RED);
             } else {
-                inMenu = false;
+                noMenu = false;
             }
         }
     }
 
     // Loop principal do jogo
     while (!WindowShouldClose()) {
-        if (paused) {
+        if (pausado) {
             BeginDrawing();
             ClearBackground(DARKGRAY);
             DrawText("Jogo Pausado", 10, 10, 20, WHITE);
@@ -232,88 +219,81 @@ int main() {
             EndDrawing();
 
             if (IsKeyPressed(KEY_ONE)) {
-                paused = false;
+                pausado = false;
             } else if (IsKeyPressed(KEY_TWO)) {
-                                SaveGame(&game); // Salva o jogo quando o jogador escolhe salvar
-                break; // Sai do loop do jogo
+                SalvarJogo(&jogo);
+                break;
             }
             continue;
         }
 
-        if (game.gameOver || game.gameWon) {
-            if (game.gameOver && !IsSoundPlaying(perdeu)) {
-                PlaySound(perdeu); // Reproduz o som de derrota
+        if (jogo.jogoEncerrado || jogo.jogoVencido) {
+            if (jogo.jogoEncerrado && !IsSoundPlaying(perdeu)) {
+                PlaySound(perdeu);
             }
 
             BeginDrawing();
             ClearBackground(RAYWHITE);
-            if (game.gameWon) {
-                DrawText("Você ganhou!", 10, 10, 20, GREEN); // Mensagem de vitória
-                PlaySound(ganhou); // Reproduz o som de vitória
+            if (jogo.jogoVencido) {
+                DrawText("Você ganhou!", 10, 10, 20, GREEN);
+                PlaySound(ganhou);
             } else {
-                DrawText("Você perdeu!", 10, 10, 20, RED); // Mensagem de derrota
+                DrawText("Você perdeu!", 10, 10, 20, RED);
             }
             DrawText("Pressione ESC para sair", 10, 40, 20, DARKGRAY);
             EndDrawing();
 
-            if (IsKeyPressed(KEY_ESCAPE)) break; // Sai do jogo se pressionar ESC
+            if (IsKeyPressed(KEY_ESCAPE)) break;
             continue;
         }
 
-        // Pausa o jogo se o jogador pressionar 'P'
-        if (IsKeyPressed(KEY_P)) paused = true;
+        if (IsKeyPressed(KEY_P)) pausado = true;
 
-        // Controle do mouse
-        int mouseX = GetMouseX() / TILE_SIZE;
-        int mouseY = GetMouseY() / TILE_SIZE;
-        bool mouseOverBoard = mouseX >= 0 && mouseX < BOARD_SIZE && mouseY >= 0 && mouseY < BOARD_SIZE;
+        int mouseX = GetMouseX() / TAMANHO_CELULA;
+        int mouseY = GetMouseY() / TAMANHO_CELULA;
+        bool mouseDentroTabuleiro = mouseX >= 0 && mouseX < TAMANHO_TABULEIRO && mouseY >= 0 && mouseY < TAMANHO_TABULEIRO;
 
-        // Ação do mouse (revelar uma célula ao clicar)
-        if (mouseOverBoard && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-            RevealTile(&game, mouseX, mouseY, numBombas);
+        if (mouseDentroTabuleiro && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+            RevelarCelula(&jogo, mouseX, mouseY, numeroBombas, explosao);
         }
 
-        // Início da renderização da tela
         BeginDrawing();
         ClearBackground(RAYWHITE);
 
-        // Desenha o tabuleiro
-        for (int y = 0; y < BOARD_SIZE; y++) {
-            for (int x = 0; x < BOARD_SIZE; x++) {
-                Rectangle tileRect = {x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE};
-                Color tileColor = LIGHTGRAY;
+        for (int y = 0; y < TAMANHO_TABULEIRO; y++) {
+            for (int x = 0; x < TAMANHO_TABULEIRO; x++) {
+                Rectangle celulaRect = {x * TAMANHO_CELULA, y * TAMANHO_CELULA, TAMANHO_CELULA, TAMANHO_CELULA};
+                Color corCelula = LIGHTGRAY;
 
-                if (game.board[y][x].revealed) {
-                    if (game.board[y][x].hasBomb) {
-                        DrawTexture(texture, x * TILE_SIZE, y * TILE_SIZE, WHITE); // Desenha a bomba
+                if (jogo.tabuleiro[y][x].revelado) {
+                    if (jogo.tabuleiro[y][x].temBomba) {
+                        DrawTexture(texturaBomba, x * TAMANHO_CELULA, y * TAMANHO_CELULA, WHITE);
                     } else {
-                        tileColor = GREEN;
-                        DrawRectangleRec(tileRect, tileColor); // Desenha uma célula revelada
+                        corCelula = GREEN;
+                        DrawRectangleRec(celulaRect, corCelula);
                     }
                 } else {
-                    DrawRectangleRec(tileRect, tileColor); // Desenha uma célula oculta
+                    DrawRectangleRec(celulaRect, corCelula);
                 }
-                DrawRectangleLines(tileRect.x, tileRect.y, TILE_SIZE, TILE_SIZE, DARKGRAY); // Desenha as bordas
+                DrawRectangleLines(celulaRect.x, celulaRect.y, TAMANHO_CELULA, TAMANHO_CELULA, DARKGRAY);
 
-                // Exibe o número de bombas ao redor se o mouse estiver sobre a célula
-                if (mouseOverBoard && mouseX == x && mouseY == y) {
-                    int bombsAround = CalculateBombsAround(&game, x, y);
+                if (mouseDentroTabuleiro && mouseX == x && mouseY == y) {
+                    int bombasAoRedor = ContarBombasAoRedor(&jogo, x, y);
                     char buffer[16];
-                    sprintf(buffer, "Bombas: %d", bombsAround);
-                    DrawText(buffer, 10, BOARD_SIZE * TILE_SIZE + 10, 20, BLACK);
+                    sprintf(buffer, "Bombas: %d", bombasAoRedor);
+                    DrawText(buffer, 10, TAMANHO_TABULEIRO * TAMANHO_CELULA + 10, 20, BLACK);
                 }
             }
         }
 
-        // Exibe a quantidade de vidas restantes
-        DrawText(TextFormat("Vidas: %d", game.lives), 10, BOARD_SIZE * TILE_SIZE + 30, 20, BLACK);
+        DrawText(TextFormat("Vidas: %d", jogo.vidas), 10, TAMANHO_TABULEIRO * TAMANHO_CELULA + 30, 20, BLACK);
         EndDrawing();
     }
 
-    // Libera recursos e fecha a janela
     UnloadSound(perdeu);
     UnloadSound(ganhou);
-    UnloadTexture(texture);
+    UnloadSound(explosao);
+    UnloadTexture(texturaBomba);
     CloseAudioDevice();
     CloseWindow();
    
