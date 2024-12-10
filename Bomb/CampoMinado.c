@@ -5,7 +5,6 @@
 
 #define TAMANHO_TABULEIRO 20
 #define TAMANHO_CELULA 32
-#define NUMERO_BOMBAS 10
 #define ARQUIVO_SALVAMENTO "salvajogo.csv"
 
 typedef struct {
@@ -59,10 +58,11 @@ void ColocarBombas(EstadoJogo *jogo, int numeroBombas) {
 
 int ContarBombasAoRedor(EstadoJogo *jogo, int x, int y) {
     int contador = 0;
-    for (int dy = -1; dy <= 1; dy++) {
-        for (int dx = -1; dx <= 1; dx++) {
+    for (int dy = -4; dy <= 4; dy++) { // Raio de 4 casas verticalmente
+        for (int dx = -4; dx <= 4; dx++) { // Raio de 4 casas horizontalmente
             int nx = x + dx;
             int ny = y + dy;
+            // Verifica se a célula está dentro do tabuleiro e tem uma bomba
             if (nx >= 0 && nx < TAMANHO_TABULEIRO && ny >= 0 && ny < TAMANHO_TABULEIRO && jogo->tabuleiro[ny][nx].temBomba) {
                 contador++;
             }
@@ -150,16 +150,16 @@ int ExibirMenuDificuldade() {
         BeginDrawing();
         ClearBackground(RAYWHITE);
         DrawText("Escolha a dificuldade:", 10, 10, 20, DARKGRAY);
-        DrawText("1: Fácil (50 Bombas)", 10, 40, 20, DARKGRAY);
-        DrawText("2: Médio (100 Bombas)", 10, 70, 20, DARKGRAY);
+        DrawText("1: Fácil (10 Bombas)", 10, 40, 20, DARKGRAY);
+        DrawText("2: Médio (50 Bombas)", 10, 70, 20, DARKGRAY);
         DrawText("3: Difícil (150 Bombas)", 10, 100, 20, DARKGRAY);
         DrawText("4: Extremo (200 Bombas)", 10, 130, 20, DARKGRAY);
         EndDrawing();
 
         if (IsKeyPressed(KEY_ONE)) {
-            selecao = 50;
+            selecao = 10;
         } else if (IsKeyPressed(KEY_TWO)) {
-            selecao = 100;
+            selecao = 50;
         } else if (IsKeyPressed(KEY_THREE)) {
             selecao = 150;
         } else if (IsKeyPressed(KEY_FOUR)) {
@@ -174,9 +174,11 @@ int main() {
     SetTargetFPS(60);
     InitAudioDevice();
 
-    Sound ganhou = LoadSound("ganhou.wav");
     Sound perdeu = LoadSound("perdeu.wav");
     Sound explosao = LoadSound("explosao.wav");
+    Music vitoria = LoadMusicStream("vitoria.mp3");
+    
+    PlayMusicStream(vitoria);
     
     Texture2D texturaBomba = LoadTexture("bomba.png");
 
@@ -190,9 +192,9 @@ int main() {
     while (noMenu) {
         BeginDrawing();
         ClearBackground(RAYWHITE);
-       
         DrawText("1: Novo Jogo", 10, 10, 20, DARKGRAY);
         DrawText("2: Carregar Jogo", 10, 40, 20, DARKGRAY);
+        
         EndDrawing();
 
         if (IsKeyPressed(KEY_ONE)) {
@@ -236,7 +238,7 @@ int main() {
             ClearBackground(RAYWHITE);
             if (jogo.jogoVencido) {
                 DrawText("Você ganhou!", 10, 10, 20, GREEN);
-                PlaySound(ganhou);
+                UpdateMusicStream(vitoria);
             } else {
                 DrawText("Você perdeu!", 10, 10, 20, RED);
             }
@@ -291,9 +293,9 @@ int main() {
     }
 
     UnloadSound(perdeu);
-    UnloadSound(ganhou);
     UnloadSound(explosao);
     UnloadTexture(texturaBomba);
+    UnloadMusicStream(vitoria);
     CloseAudioDevice();
     CloseWindow();
    
