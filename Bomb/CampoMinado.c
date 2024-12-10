@@ -37,7 +37,7 @@ void InicializarTabuleiro(EstadoJogo *jogo, int numeroBombas) {
 
     for (int y = 0; y < TAMANHO_TABULEIRO; y++) {
         for (int x = 0; x < TAMANHO_TABULEIRO; x++) {
-            jogo->tabuleiro[y][x] = (Celula){false, false, false};
+            jogo->tabuleiro[y][x] = (Celula){false, false};
         }
     }
     ColocarBombas(jogo, numeroBombas);
@@ -102,20 +102,20 @@ void SalvarJogo(EstadoJogo *jogo) {
         fclose(arquivo);
         printf("Jogo salvo com sucesso!\n");
     } else {
-        printf("Erro ao salvar o jogo: não foi possível abrir o arquivo.\n");
+        printf("não foi possível abrir o arquivo.\n");
     }
 }
 
 bool CarregarJogo(EstadoJogo *jogo) {
     FILE *arquivo = fopen("salvajogo.csv", "r");
     if (!arquivo) {
-        printf("Arquivo de salvamento não encontrado. Iniciando novo jogo...\n");
+        printf("Arquivo de salvamento não encontrado.\n");
         return false;
     }
 
     int vidas, celulasReveladas, jogoEncerrado;
     if (fscanf(arquivo, "%d,%d,%d\n", &vidas, &celulasReveladas, &jogoEncerrado) != 3) {
-        printf("Erro ao carregar o jogo: formato inválido do cabeçalho.\n");
+        printf("formato inválido do cabeçalho.\n");
         fclose(arquivo);
         return false;
     }
@@ -128,7 +128,7 @@ bool CarregarJogo(EstadoJogo *jogo) {
         for (int x = 0; x < TAMANHO_TABULEIRO; x++) {
             int temBomba, revelado;
             if (fscanf(arquivo, "%d,%d\n", &temBomba, &revelado) != 2) {
-                printf("Erro ao carregar o jogo: dados inválidos da célula (%d, %d).\n", x, y);
+                printf("dados inválidos da célula (%d, %d).\n", x, y);
                 fclose(arquivo);
                 return false;
             }
@@ -229,6 +229,7 @@ int main() {
         if (jogo.jogoEncerrado || jogo.jogoVencido) {
             if (jogo.jogoEncerrado && !IsSoundPlaying(perdeu)) {
                 PlaySound(perdeu);
+                remove("salvajogo.csv");
             }
 
             BeginDrawing();
