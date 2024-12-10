@@ -19,15 +19,14 @@ typedef struct {
     bool jogoVencido;
 } EstadoJogo;
 
-// Funções auxiliares
 void InicializarTabuleiro(EstadoJogo *jogo, int numeroBombas);
 void ColocarBombas(EstadoJogo *jogo, int numeroBombas);
 int ContarBombasAoRedor(EstadoJogo *jogo, int x, int y);
 void RevelarCelula(EstadoJogo *jogo, int x, int y, int numeroBombas, Sound explosao);
-void SalvarJogo(EstadoJogo *jogo);
-bool CarregarJogo(EstadoJogo *jogo);
+void SalvarJogo(EstadoJogo *jogo, int numeroBombas);
+bool CarregarJogo(EstadoJogo *jogo, int *numeroBombas);
 
-// Inicialização do jogo
+
 void InicializarTabuleiro(EstadoJogo *jogo, int numeroBombas) {
     srand(time(NULL));
     jogo->vidas = 3;
@@ -37,7 +36,7 @@ void InicializarTabuleiro(EstadoJogo *jogo, int numeroBombas) {
 
     for (int y = 0; y < TAMANHO_TABULEIRO; y++) {
         for (int x = 0; x < TAMANHO_TABULEIRO; x++) {
-            jogo->tabuleiro[y][x] = (Celula){false, false};
+            jogo->tabuleiro[y][x] = (Celula){false, false, false};
         }
     }
     ColocarBombas(jogo, numeroBombas);
@@ -56,11 +55,10 @@ void ColocarBombas(EstadoJogo *jogo, int numeroBombas) {
 
 int ContarBombasAoRedor(EstadoJogo *jogo, int x, int y) {
     int contador = 0;
-    for (int dy = -4; dy <= 4; dy++) { // Raio de 4 casas verticalmente
-        for (int dx = -4; dx <= 4; dx++) { // Raio de 4 casas horizontalmente
+    for (int dy = -4; dy <= 4; dy++) {
+        for (int dx = -4; dx <= 4; dx++) { 
             int nx = x + dx;
             int ny = y + dy;
-            // Verifica se a célula está dentro do tabuleiro e tem uma bomba
             if (nx >= 0 && nx < TAMANHO_TABULEIRO && ny >= 0 && ny < TAMANHO_TABULEIRO && jogo->tabuleiro[ny][nx].temBomba) {
                 contador++;
             }
@@ -88,10 +86,11 @@ void RevelarCelula(EstadoJogo *jogo, int x, int y, int numeroBombas, Sound explo
     }
 }
 
-void SalvarJogo(EstadoJogo *jogo) {
+void SalvarJogo(EstadoJogo *jogo, int numeroBombas) {
     FILE *arquivo = fopen("salvajogo.csv", "w");
+
     if (arquivo) {
-        fprintf(arquivo, "%d,%d,%d\n", jogo->vidas, jogo->celulasReveladas, jogo->jogoEncerrado);
+        fprintf(arquivo, "%d,%d,%d,%d\n", jogo->vidas, jogo->celulasReveladas, jogo->jogoEncerrado, numeroBombas);
 
         for (int y = 0; y < TAMANHO_TABULEIRO; y++) {
             for (int x = 0; x < TAMANHO_TABULEIRO; x++) {
@@ -99,23 +98,24 @@ void SalvarJogo(EstadoJogo *jogo) {
                 fprintf(arquivo, "%d,%d\n", c->temBomba, c->revelado);
             }
         }
+
         fclose(arquivo);
         printf("Jogo salvo com sucesso!\n");
     } else {
         printf("não foi possível abrir o arquivo.\n");
     }
 }
-
-bool CarregarJogo(EstadoJogo *jogo) {
+bool CarregarJogo(EstadoJogo *jogo, int *numeroBombas) {
     FILE *arquivo = fopen("salvajogo.csv", "r");
+
     if (!arquivo) {
         printf("Arquivo de salvamento não encontrado.\n");
         return false;
     }
 
     int vidas, celulasReveladas, jogoEncerrado;
-    if (fscanf(arquivo, "%d,%d,%d\n", &vidas, &celulasReveladas, &jogoEncerrado) != 3) {
-        printf("formato inválido do cabeçalho.\n");
+    if (fscanf(arquivo, "%d,%d,%d,%d\n", &vidas, &celulasReveladas, &jogoEncerrado, numeroBombas) != 4) {
+        printf("Formato inválido do cabeçalho.\n");
         fclose(arquivo);
         return false;
     }
@@ -128,7 +128,7 @@ bool CarregarJogo(EstadoJogo *jogo) {
         for (int x = 0; x < TAMANHO_TABULEIRO; x++) {
             int temBomba, revelado;
             if (fscanf(arquivo, "%d,%d\n", &temBomba, &revelado) != 2) {
-                printf("dados inválidos da célula (%d, %d).\n", x, y);
+                printf("Dados inválidos da célula (%d, %d).\n", x, y);
                 fclose(arquivo);
                 return false;
             }
@@ -141,6 +141,7 @@ bool CarregarJogo(EstadoJogo *jogo) {
     printf("Jogo carregado com sucesso!\n");
     return true;
 }
+
 int ExibirMenuDificuldade() {
     int selecao = 0;
     while (selecao == 0) {
@@ -185,7 +186,6 @@ int main() {
    
     int numeroBombas = 0;
    
-    // Menu inicial
     while (noMenu) {
         BeginDrawing();
         ClearBackground(RAYWHITE);
@@ -199,7 +199,7 @@ int main() {
             InicializarTabuleiro(&jogo, numeroBombas);
             noMenu = false;
         } else if (IsKeyPressed(KEY_TWO)) {
-            if (!CarregarJogo(&jogo)) {
+            if (!CarregarJogo(&jogo, &numeroBombas)) {
                 DrawText("Falha ao carregar jogo!", 10, 70, 20, RED);
             } else {
                 noMenu = false;
@@ -207,7 +207,6 @@ int main() {
         }
     }
 
-    // Loop principal do jogo
     while (!WindowShouldClose()) {
         if (pausado) {
             BeginDrawing();
@@ -220,7 +219,7 @@ int main() {
             if (IsKeyPressed(KEY_ONE)) {
                 pausado = false;
             } else if (IsKeyPressed(KEY_TWO)) {
-                SalvarJogo(&jogo);
+                SalvarJogo(&jogo, numeroBombas);
                 break;
             }
             continue;
@@ -229,7 +228,6 @@ int main() {
         if (jogo.jogoEncerrado || jogo.jogoVencido) {
             if (jogo.jogoEncerrado && !IsSoundPlaying(perdeu)) {
                 PlaySound(perdeu);
-                remove("salvajogo.csv");
             }
 
             BeginDrawing();
