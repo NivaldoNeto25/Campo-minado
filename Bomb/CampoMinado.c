@@ -194,10 +194,10 @@ int main() {
     Sound perdeu = LoadSound("perdeu.wav");
     Sound explosao = LoadSound("explosao.wav");
     Music vitoria = LoadMusicStream("vitoria.mp3");
-    Music ambiente = LoadMusicStream("musicajogo.mp3");
+    Music trilha = LoadMusicStream("trilha.mp3");
     
     PlayMusicStream(vitoria);
-    PlayMusicStream(ambiente);
+    PlayMusicStream(trilha);
     
     Texture2D texturaBomba = LoadTexture("bomba.png");
 
@@ -269,7 +269,7 @@ int main() {
 
         if (IsKeyPressed(KEY_P)) pausado = true;
         
-        UpdateMusicStream(ambiente);
+        UpdateMusicStream(trilha);
 
         int mouseX = GetMouseX() / TAMANHO_CELULA;
         int mouseY = GetMouseY() / TAMANHO_CELULA;
@@ -316,7 +316,7 @@ int main() {
     UnloadSound(explosao);
     UnloadTexture(texturaBomba);
     UnloadMusicStream(vitoria);
-    UnloadMusicStream(ambiente);
+    UnloadMusicStream(trilha);
     CloseAudioDevice();
     CloseWindow();
    
