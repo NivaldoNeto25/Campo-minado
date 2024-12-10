@@ -5,12 +5,10 @@
 
 #define TAMANHO_TABULEIRO 20
 #define TAMANHO_CELULA 32
-#define ARQUIVO_SALVAMENTO "salvajogo.csv"
 
 typedef struct {
     bool temBomba;
     bool revelado;
-    bool marcado;
 } Celula;
 
 typedef struct {
@@ -91,14 +89,14 @@ void RevelarCelula(EstadoJogo *jogo, int x, int y, int numeroBombas, Sound explo
 }
 
 void SalvarJogo(EstadoJogo *jogo) {
-    FILE *arquivo = fopen(ARQUIVO_SALVAMENTO, "w");
+    FILE *arquivo = fopen("salvajogo.csv", "w");
     if (arquivo) {
         fprintf(arquivo, "%d,%d,%d\n", jogo->vidas, jogo->celulasReveladas, jogo->jogoEncerrado);
 
         for (int y = 0; y < TAMANHO_TABULEIRO; y++) {
             for (int x = 0; x < TAMANHO_TABULEIRO; x++) {
                 Celula *c = &jogo->tabuleiro[y][x];
-                fprintf(arquivo, "%d,%d,%d\n", c->temBomba, c->revelado, c->marcado);
+                fprintf(arquivo, "%d,%d\n", c->temBomba, c->revelado);
             }
         }
         fclose(arquivo);
@@ -109,7 +107,7 @@ void SalvarJogo(EstadoJogo *jogo) {
 }
 
 bool CarregarJogo(EstadoJogo *jogo) {
-    FILE *arquivo = fopen(ARQUIVO_SALVAMENTO, "r");
+    FILE *arquivo = fopen("salvajogo.csv", "r");
     if (!arquivo) {
         printf("Arquivo de salvamento não encontrado. Iniciando novo jogo...\n");
         return false;
@@ -128,15 +126,14 @@ bool CarregarJogo(EstadoJogo *jogo) {
 
     for (int y = 0; y < TAMANHO_TABULEIRO; y++) {
         for (int x = 0; x < TAMANHO_TABULEIRO; x++) {
-            int temBomba, revelado, marcado;
-            if (fscanf(arquivo, "%d,%d,%d\n", &temBomba, &revelado, &marcado) != 3) {
+            int temBomba, revelado;
+            if (fscanf(arquivo, "%d,%d\n", &temBomba, &revelado) != 2) {
                 printf("Erro ao carregar o jogo: dados inválidos da célula (%d, %d).\n", x, y);
                 fclose(arquivo);
                 return false;
             }
             jogo->tabuleiro[y][x].temBomba = temBomba;
             jogo->tabuleiro[y][x].revelado = revelado;
-            jogo->tabuleiro[y][x].marcado = marcado;
         }
     }
 
