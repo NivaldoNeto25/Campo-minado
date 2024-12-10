@@ -194,7 +194,7 @@ int main() {
     Sound perdeu = LoadSound("perdeu.wav");
     Sound explosao = LoadSound("explosao.wav");
     Music vitoria = LoadMusicStream("vitoria.mp3");
-    Music ambiente = LoadMusicStream("ambiente.mp3");
+    Music ambiente = LoadMusicStream("musicajogo.mp3");
     
     PlayMusicStream(vitoria);
     PlayMusicStream(ambiente);
