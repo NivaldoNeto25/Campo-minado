@@ -36,7 +36,7 @@ void InicializarTabuleiro(EstadoJogo *jogo, int numeroBombas) {
 
     for (int y = 0; y < TAMANHO_TABULEIRO; y++) {
         for (int x = 0; x < TAMANHO_TABULEIRO; x++) {
-            jogo->tabuleiro[y][x] = (Celula){false, false, false};
+            jogo->tabuleiro[y][x] = (Celula){false, false};
         }
     }
     ColocarBombas(jogo, numeroBombas);
@@ -54,7 +54,26 @@ void ColocarBombas(EstadoJogo *jogo, int numeroBombas) {
 }
 
 int ContarBombasAoRedor(EstadoJogo *jogo, int x, int y) {
-    int contador = 0;
+    int nx, ny, contador = 0;
+    //cima e baixo
+    for (int dy = -4; dy <= 4; dy++) {
+        nx= x;
+        ny= y + dy;
+        if (nx >= 0 && nx < TAMANHO_TABULEIRO && ny >= 0 && ny < TAMANHO_TABULEIRO && jogo->tabuleiro[ny][nx].temBomba) {
+                contador++;
+        }
+    }
+        //esquerda e direita
+    for (int dx = -4; dx <= 4; dx++) {
+    nx = x + dx;
+    ny = y;
+    	if ((nx != x || ny != y) && nx >= 0 && nx < TAMANHO_TABULEIRO && ny >= 0 && ny < TAMANHO_TABULEIRO && jogo->tabuleiro[ny][nx].temBomba){
+                contador++;
+            }
+        }
+    return contador;
+    
+    /*int contador = 0;
     for (int dy = -4; dy <= 4; dy++) {
         for (int dx = -4; dx <= 4; dx++) { 
             int nx = x + dx;
@@ -64,7 +83,7 @@ int ContarBombasAoRedor(EstadoJogo *jogo, int x, int y) {
             }
         }
     }
-    return contador;
+    return contador;*/
 }
 
 void RevelarCelula(EstadoJogo *jogo, int x, int y, int numeroBombas, Sound explosao) {
@@ -175,8 +194,10 @@ int main() {
     Sound perdeu = LoadSound("perdeu.wav");
     Sound explosao = LoadSound("explosao.wav");
     Music vitoria = LoadMusicStream("vitoria.mp3");
+    Music ambiente = LoadMusicStream("ambiente.mp3");
     
     PlayMusicStream(vitoria);
+    PlayMusicStream(ambiente);
     
     Texture2D texturaBomba = LoadTexture("bomba.png");
 
@@ -228,6 +249,7 @@ int main() {
         if (jogo.jogoEncerrado || jogo.jogoVencido) {
             if (jogo.jogoEncerrado && !IsSoundPlaying(perdeu)) {
                 PlaySound(perdeu);
+                remove("salvajogo.csv");
             }
 
             BeginDrawing();
@@ -246,6 +268,8 @@ int main() {
         }
 
         if (IsKeyPressed(KEY_P)) pausado = true;
+        
+        UpdateMusicStream(ambiente);
 
         int mouseX = GetMouseX() / TAMANHO_CELULA;
         int mouseY = GetMouseY() / TAMANHO_CELULA;
@@ -292,6 +316,7 @@ int main() {
     UnloadSound(explosao);
     UnloadTexture(texturaBomba);
     UnloadMusicStream(vitoria);
+    UnloadMusicStream(ambiente);
     CloseAudioDevice();
     CloseWindow();
    
