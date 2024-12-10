@@ -72,18 +72,6 @@ int ContarBombasAoRedor(EstadoJogo *jogo, int x, int y) {
             }
         }
     return contador;
-    
-    /*int contador = 0;
-    for (int dy = -4; dy <= 4; dy++) {
-        for (int dx = -4; dx <= 4; dx++) { 
-            int nx = x + dx;
-            int ny = y + dy;
-            if (nx >= 0 && nx < TAMANHO_TABULEIRO && ny >= 0 && ny < TAMANHO_TABULEIRO && jogo->tabuleiro[ny][nx].temBomba) {
-                contador++;
-            }
-        }
-    }
-    return contador;*/
 }
 
 void RevelarCelula(EstadoJogo *jogo, int x, int y, int numeroBombas, Sound explosao) {
@@ -124,6 +112,7 @@ void SalvarJogo(EstadoJogo *jogo, int numeroBombas) {
         printf("não foi possível abrir o arquivo.\n");
     }
 }
+
 bool CarregarJogo(EstadoJogo *jogo, int *numeroBombas) {
     FILE *arquivo = fopen("salvajogo.csv", "r");
 
