@@ -60,10 +60,12 @@ int main() { //Função principal
             numeroBombas = ExibirMenuDificuldade();
             InicializarTabuleiro(&jogo, numeroBombas);
             noMenu = false;
-        } else if (IsKeyPressed(KEY_TWO)) { //Carregar jogo
+        }
+        else if (IsKeyPressed(KEY_TWO)) { //Carregar jogo
             if (!CarregarJogo(&jogo, &numeroBombas)) {
                 DrawText("Falha ao carregar jogo!", 10, 70, 20, RED);
-            } else {
+            }
+            else {
                 noMenu = false;
             }
         }
@@ -80,7 +82,8 @@ int main() { //Função principal
 
             if (IsKeyPressed(KEY_ONE)) { //Retornar ao jogo
                 pausado = false;
-            } else if (IsKeyPressed(KEY_TWO)) { //Salvar jogo
+            }
+            else if (IsKeyPressed(KEY_TWO)) { //Salvar jogo
                 SalvarJogo(&jogo, numeroBombas);
                 break;
             }
@@ -100,7 +103,8 @@ int main() { //Função principal
             if (jogo.jogoVencido) { //Venceu o jogo
                 DrawText("Você ganhou!", 10, 10, 20, GREEN);
                 UpdateMusicStream(vitoria);
-            } else {
+            }
+            else {
                 DrawText("Você perdeu!", 10, 10, 20, RED);
             }
             DrawText("Pressione ESC para sair", 10, 40, 20, DARKGRAY);
@@ -133,11 +137,13 @@ int main() { //Função principal
                 if (jogo.tabuleiro[y][x].revelado) {
                     if (jogo.tabuleiro[y][x].temBomba) { //Revela bomba
                         DrawTexture(texturaBomba, x * TAMANHO_CELULA, y * TAMANHO_CELULA, WHITE);
-                    } else { //Revela a casa sem a bomba
+                    }
+                    else { //Revela a casa sem a bomba
                         corCelula = GREEN;
                         DrawRectangleRec(celulaRect, corCelula);
                     }
-                } else {
+                }
+                else {
                     DrawRectangleRec(celulaRect, corCelula);
                 }
                 DrawRectangleLines(celulaRect.x, celulaRect.y, TAMANHO_CELULA, TAMANHO_CELULA, DARKGRAY);
@@ -180,11 +186,14 @@ int ExibirMenuDificuldade() {
 
         if (IsKeyPressed(KEY_ONE)) {
             selecao = 10;
-        } else if (IsKeyPressed(KEY_TWO)) {
+        }
+        else if (IsKeyPressed(KEY_TWO)) {
             selecao = 50;
-        } else if (IsKeyPressed(KEY_THREE)) {
+        }
+        else if (IsKeyPressed(KEY_THREE)) {
             selecao = 150;
-        } else if (IsKeyPressed(KEY_FOUR)) {
+        }
+        else if (IsKeyPressed(KEY_FOUR)) {
             selecao = 200;
         }
     }
@@ -214,7 +223,8 @@ void ColocarBombas(EstadoJogo *jogo, int numeroBombas) {
         do {
             x = rand() % TAMANHO_TABULEIRO;
             y = rand() % TAMANHO_TABULEIRO;
-        } while (jogo->tabuleiro[y][x].temBomba);
+        }
+        while (jogo->tabuleiro[y][x].temBomba);
         jogo->tabuleiro[y][x].temBomba = true;
     }
 }
@@ -250,7 +260,8 @@ void RevelarCelula(EstadoJogo *jogo, int x, int y, int numeroBombas, Sound explo
             if (jogo->vidas <= 0) {
                 jogo->jogoEncerrado = true;
             }
-        } else {
+        }
+        else {
             jogo->celulasReveladas++;
             if (jogo->celulasReveladas == (TAMANHO_TABULEIRO * TAMANHO_TABULEIRO) - numeroBombas) {
                 jogo->jogoVencido = true;
@@ -274,7 +285,8 @@ void SalvarJogo(EstadoJogo *jogo, int numeroBombas) {
 
         fclose(arquivo);
         printf("Jogo salvo com sucesso!\n");
-    } else {
+    }
+    else {
         printf("não foi possível abrir o arquivo.\n");
     }
 }
