@@ -25,6 +25,7 @@ int ContarBombasAoRedor(EstadoJogo *jogo, int x, int y);
 void RevelarCelula(EstadoJogo *jogo, int x, int y, int numeroBombas, Sound explosao);
 void SalvarJogo(EstadoJogo *jogo, int numeroBombas);
 bool CarregarJogo(EstadoJogo *jogo, int *numeroBombas);
+int ExibirMenuDificuldade();
 
 int main() { //Função principal
     InitWindow(TAMANHO_TABULEIRO * TAMANHO_CELULA, TAMANHO_TABULEIRO * TAMANHO_CELULA + 50, "Campo Minado");
@@ -89,7 +90,6 @@ int main() { //Função principal
         if (jogo.jogoEncerrado || jogo.jogoVencido) { //Fim do jogo
             
             if (jogo.jogoEncerrado && !IsSoundPlaying(perdeu)) { //Perdeu o jogo
-                DrawText("Você perdeu!", 10, 10, 20, RED);
                 PlaySound(perdeu);
                 remove("salvajogo.csv");
             }
@@ -100,9 +100,9 @@ int main() { //Função principal
             if (jogo.jogoVencido) { //Venceu o jogo
                 DrawText("Você ganhou!", 10, 10, 20, GREEN);
                 UpdateMusicStream(vitoria);
-            } /*else {
+            } else {
                 DrawText("Você perdeu!", 10, 10, 20, RED);
-            }*/
+            }
             DrawText("Pressione ESC para sair", 10, 40, 20, DARKGRAY);
             EndDrawing();
 
