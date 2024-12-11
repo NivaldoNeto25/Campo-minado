@@ -1,4 +1,4 @@
-# Projeto da cadeira de Programação 1
+# Ideia do projeto
 
 O objetivo do projeto é desenvolver um jogo de campo minado na linguagem C seguindo as seguintes regras:
 
@@ -24,3 +24,7 @@ casas do tipo terra forem reveladas, ou caso o jogador estoure 3 bombas.
 4. Ao pressionar ESC, o jogo deve ser pausado e um menu com as opções SAIR e RETORNAR deve ser
 mostrado. Ao clicar em sair, o status atual do jogo deve ser salvo utilizando arquivos, incluindo estado do
 mapa e vidas restantes do/a jogador/a.
+
+# Download do jogo
+
+1. Link para download do jogo: https://nivaldo-neto.itch.io/campo-minado
