@@ -36,24 +36,24 @@ int main() { //Função principal
     Sound explosao = LoadSound("explosao.wav");
     Music vitoria = LoadMusicStream("vitoria.mp3");
     Music trilha = LoadMusicStream("trilha.mp3");
-    
+
     PlayMusicStream(vitoria);
     PlayMusicStream(trilha);
-    
+
     Texture2D texturaBomba = LoadTexture("bomba.png");
 
     EstadoJogo jogo = {0};
     bool pausado = false;
     bool noMenu = true;
-   
+
     int numeroBombas = 0;
-   
+
     while (noMenu) { //Loop principal do menu
         BeginDrawing();
         ClearBackground(RAYWHITE);
         DrawText("1: Novo Jogo", 10, 10, 20, DARKGRAY);
         DrawText("2: Carregar Jogo", 10, 40, 20, DARKGRAY);
-        
+
         EndDrawing();
 
         if (IsKeyPressed(KEY_ONE)) { //Novo jogo
@@ -88,7 +88,7 @@ int main() { //Função principal
         }
 
         if (jogo.jogoEncerrado || jogo.jogoVencido) { //Fim do jogo
-            
+
             if (jogo.jogoEncerrado && !IsSoundPlaying(perdeu)) { //Perdeu o jogo
                 PlaySound(perdeu);
                 remove("salvajogo.csv");
@@ -96,7 +96,7 @@ int main() { //Função principal
 
             BeginDrawing();
             ClearBackground(RAYWHITE);
-            
+
             if (jogo.jogoVencido) { //Venceu o jogo
                 DrawText("Você ganhou!", 10, 10, 20, GREEN);
                 UpdateMusicStream(vitoria);
@@ -111,7 +111,7 @@ int main() { //Função principal
         }
 
         if (IsKeyPressed(KEY_P)) pausado = true;
-        
+
         UpdateMusicStream(trilha);
 
         int mouseX = GetMouseX() / TAMANHO_CELULA;
@@ -162,7 +162,7 @@ int main() { //Função principal
     UnloadMusicStream(trilha);
     CloseAudioDevice();
     CloseWindow();
-   
+
     return 0;
 }
 
@@ -200,7 +200,9 @@ void InicializarTabuleiro(EstadoJogo *jogo, int numeroBombas) {
 
     for (int y = 0; y < TAMANHO_TABULEIRO; y++) {
         for (int x = 0; x < TAMANHO_TABULEIRO; x++) {
-            jogo->tabuleiro[y][x] = (Celula){false, false};
+            jogo->tabuleiro[y][x] = (Celula) {
+                false, false
+            };
         }
     }
     ColocarBombas(jogo, numeroBombas);
@@ -219,22 +221,22 @@ void ColocarBombas(EstadoJogo *jogo, int numeroBombas) {
 
 int ContarBombasAoRedor(EstadoJogo *jogo, int x, int y) {
     int nx, ny, contador = 0;
-    
+
     for (int dy = -4; dy <= 4; dy++) { //Cima e baixo
         nx= x;
         ny= y + dy;
         if (nx >= 0 && nx < TAMANHO_TABULEIRO && ny >= 0 && ny < TAMANHO_TABULEIRO && jogo->tabuleiro[ny][nx].temBomba) {
-                contador++;
+            contador++;
         }
     }
-       
+
     for (int dx = -4; dx <= 4; dx++) { //Esquerda e direita
-    nx = x + dx;
-    ny = y;
-    	if ((nx != x || ny != y) && nx >= 0 && nx < TAMANHO_TABULEIRO && ny >= 0 && ny < TAMANHO_TABULEIRO && jogo->tabuleiro[ny][nx].temBomba){
-                contador++;
-            }
+        nx = x + dx;
+        ny = y;
+        if ((nx != x || ny != y) && nx >= 0 && nx < TAMANHO_TABULEIRO && ny >= 0 && ny < TAMANHO_TABULEIRO && jogo->tabuleiro[ny][nx].temBomba) {
+            contador++;
         }
+    }
     return contador;
 }
 
